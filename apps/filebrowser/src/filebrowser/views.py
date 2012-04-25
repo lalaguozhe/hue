@@ -23,6 +23,7 @@
 import errno
 import logging
 import mimetypes
+import operator
 import posixpath
 import stat as stat_module
 import os
@@ -37,7 +38,8 @@ from cStringIO import StringIO
 from gzip import GzipFile
 from avro import datafile, io
 
-from desktop.lib import i18n
+from desktop.lib import i18n, paginator
+from desktop.lib.conf import coerce_bool
 from desktop.lib.django_util import make_absolute, render, render_json
 from desktop.lib.django_util import PopupException, format_preserving_redirect
 from filebrowser.lib.rwx import filetype, rwx
@@ -121,7 +123,7 @@ def view(request, path):
     try:
         stats = request.fs.stats(path)
         if stats.isDir:
-            return listdir(request, path, False)
+            return listdir_paged(request, path, False)
         else:
             return display(request, path)
     except (IOError, WebHdfsException), e:
@@ -344,6 +346,84 @@ def listdir(request, path, chooser):
     else:
         return render('listdir.mako', request, data)
 
+def listdir_paged(request, path, chooser):
+    """
+    A paginated version of listdir.
+    Does not support sorting (yet).
+    Does not support chooser (yet).
+
+    Query parameters:
+      pagenum           - The page number to show. Defaults to 1.
+      pagesize          - How many to show on a page. Defaults to 15.
+      sortby=?          - Specify attribute to sort by. Accepts:
+                            (name, atime, mtime, size, user, group)
+                          Defaults to name.
+      descending        - Specify a descending sort order.
+                          Default to false.
+      filter=?          - Specify a substring filter to search for in
+                          the filename field.
+    """
+    if not request.fs.isdir(path):
+        raise PopupException("Not a directory: %s" % (path,))
+
+    pagenum = int(request.GET.get('pagenum', 1))
+    pagesize = int(request.GET.get('pagesize', 15))
+
+    home_dir_path = request.user.get_home_directory()
+    breadcrumbs = parse_breadcrumbs(path)
+
+    all_stats = request.fs.listdir_stats(path)
+
+    # Include parent dir, unless at filesystem root.
+    if Hdfs.normpath(path) != posixpath.sep:
+        parent_path = request.fs.join(path, "..")
+        parent_stat = request.fs.stats(parent_path)
+        # The 'path' field would be absolute, but we want its basename to be
+        # actually '..' for display purposes. Encode it since _massage_stats expects byte strings.
+        parent_stat['path'] = parent_path
+        parent_stat['name'] = ".."
+        all_stats.insert(0, parent_stat)
+
+    # Filter first
+    filter_str = request.GET.get('filter', None)
+    if filter_str:
+        filtered_stats = filter(lambda sb: filter_str in sb['name'], all_stats)
+        all_stats = filtered_stats
+
+    # Sort next
+    sortby = request.GET.get('sortby', None)
+    if sortby is not None:
+        if sortby not in ('name', 'atime', 'mtime', 'user', 'group', 'size'):
+            logger.info("Invalid sort attribute '%s' for listdir." %
+                        (sortby,))
+        else:
+            descending_param = request.GET.get('descending', None)
+            all_stats = sorted(all_stats,
+                               key=operator.attrgetter(sortby),
+                               reverse=coerce_bool(descending_param))
+
+    # Do pagination
+    page = paginator.Paginator(all_stats, pagesize).page(pagenum)
+    shown_stats = page.object_list
+    page.object_list = [ _massage_stats(request, s) for s in shown_stats ]
+
+    data = {
+        'path': path,
+        'breadcrumbs': breadcrumbs,
+        'current_request_path': request.path,
+        'files': page.object_list,
+        'page': page,
+        'pagesize': pagesize,
+        # The following should probably be deprecated
+        'cwd_set': True,
+        'file_filter': 'any',
+        'current_dir_path': path,
+    }
+    if chooser:
+        raise NotImplementedError       # TODO(bc)
+    else:
+        return render('listdir_paged.mako', request, data)
+
 
 def chooser(request, path):
     """
@@ -373,7 +453,7 @@ def _massage_stats(request, stats):
     normalized = Hdfs.normpath(path)
     return {
         'path': normalized,
-        'name': posixpath.basename(path),
+        'name': stats['name'],
         'stats': stats.to_json_dict(),
         'type': filetype(stats['mode']),
         'rwx': rwx(stats['mode']),

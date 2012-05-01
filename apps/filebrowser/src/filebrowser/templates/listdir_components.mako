@@ -17,10 +17,37 @@
 import datetime
 import md5
 from django.template.defaultfilters import urlencode, stringformat, filesizeformat, date, time, escape
-from desktop.lib.django_util import reverse_with_get
+from desktop.lib.django_util import reverse_with_get, extract_field_data
 from django.utils.encoding import smart_str
 %>
 
+
+<%def name="pageref(num)">
+    href="?pagenum=${num}&pagesize=${pagesize}"
+</%def>
+<%def name="prevpage(page)">
+  ${pageref(page.previous_page_number())}
+</%def>
+<%def name="nextpage(page)">
+  ${pageref(page.next_page_number())}
+</%def>
+<%def name="toppage(page)">
+  ${pageref(1)}
+</%def>
+<%def name="bottompage(page)">
+  ${pageref(page.num_pages())}
+</%def>
+<%def name="pagination(page)">
+	<div class="pagination">
+	  <ul class="pull-right">
+	    <li class="prev"><a title="Beginning of List" ${toppage(page)}>&larr; Beginning of List</a></li>
+	    <li><a title="Previous Page" ${prevpage(page)}>Previous Page</a></li>
+		<li><a title="Next page" ${nextpage(page)}>Next Page</a></li>
+	    <li class="next"><a title="End of List" ${bottompage(page)}>End of List &rarr;</a></li>
+	  </ul>
+	<p>Show <select id="pagesize" class="input-mini"><option>15</option><option>30</option><option>45</option><option>60</option><option>100</option><option>200</option></select> items per page. Showing ${page.start_index()} to ${page.end_index()} of ${page.total_count()} items, page ${page.number} of ${page.num_pages()}.</p>
+	</div>
+</%def>
 
 <%def name="list_table_chooser(files, path, current_request_path)">
   ${_table(files, path, current_request_path, 'chooser')}
@@ -33,6 +60,11 @@ from django.utils.encoding import smart_str
 	<script src="/static/ext/js/datatables-paging-0.1.js" type="text/javascript" charset="utf-8"></script>
 	<link rel="stylesheet" href="/static/ext/css/fileuploader.css" type="text/css" media="screen" title="no title" charset="utf-8" />
 	<style type="text/css">
+    	.form-padding-fix{
+	        display: inline;
+	        padding: 0;
+	        margin: 0;
+	    }
 		.pull-right {
 			margin: 4px;
 		}
@@ -40,29 +72,20 @@ from django.utils.encoding import smart_str
 			cursor: pointer;
 		}
 	</style>
-	<div class="well hueWell">
-		<p class="pull-right">
-			<a href="#" class="btn upload-link">Upload files</a>
-			<a href="#" class="btn create-directory-link">New directory</a>
-		</p>
-		<form class="form-search">
-			Filter: <input id="filterInput" class="input-xlarge search-query" placeholder="Search for file name">
-		</form>
-	</div>
 
 	<table class="table table-condensed table-striped datatables">
 		<thead>
 			<tr>
 			% if cwd_set:
-				<th>Name</th>
+				<th class="sortable sorting" data-sort="name">Name</th>
 			% else:
-				<th>Path</th>
+				<th class="sortable sorting" data-sort="name">Path</th>
 			% endif
-				<th>Size</th>
-				<th>User</th>
-				<th>Group</th>
+				<th class="sortable sorting" data-sort="size">Size</th>
+				<th class="sortable sorting" data-sort="user">User</th>
+				<th class="sortable sorting" data-sort="group">Group</th>
 				<th>Permissions</th>
-				<th>Date</th>
+				<th class="sortable sorting" data-sort="atime">Date</th>
 				<th>&nbsp;</th>
 			</tr>
 		</thead>
@@ -129,6 +152,8 @@ from django.utils.encoding import smart_str
 			% endfor
 		</tbody>
 	</table>
+
+	${pagination(page)}
 
 <!-- delete modal -->
 <div id="deleteModal" class="modal hide fade">
@@ -308,27 +333,59 @@ from django.utils.encoding import smart_str
     // don"t wait for the window to load
     window.onload = createUploader;
 
-	$(document).ready(function(){
-        //filter handlers
-        var oTable = $('.datatables').dataTable( {
-          "sPaginationType": "bootstrap",
-          "bLengthChange": false,
-          "iDisplayLength": 15,
-          "sDom": "<'row'r>t<'row'<'span8'i><''p>>",
-		  "aoColumns": [
-				null,
-				null,
-				null,
-				null,
-				null,
-				{ "sType": "date" },
-				null
-			]
-        });
+	function getQueryString(){
+		var queryString = {};
+		if (window.location.href.indexOf("?")>-1){
+			window.location.href.split("?").pop().split("&").forEach(function (prop) {
+				var item = prop.split("=");
+				queryString[item.shift()] = item.shift();
+			});
+		}
+		return queryString;
+	}
 
-        $("#filterInput").keyup(function() {
-            oTable.fnFilter($(this).val(), 0 /* Column Idx */);
-        });
+	function setQueryString(queryString){
+		var qs = "?"
+		for (var key in queryString) {
+		    qs += key + "=" + queryString[key] + "&";
+		}
+		return qs.substring(0,qs.length-1);
+	}
+
+	$(document).ready(function(){
+		var qs = getQueryString();
+
+		if (qs["sortby"] == null){
+			qs["sortby"] = "name";
+		}
+
+		var el = $(".sortable[data-sort="+qs["sortby"]+"]");
+		el.removeClass("sorting");
+		if (qs["descending"] != null && qs["descending"] == "true"){
+			el.addClass("sorting_desc");
+		}
+		else {
+			el.addClass("sorting_asc");
+		}
+
+
+		$(".sortable").click(function(){
+			qs["sortby"]=$(this).data("sort");
+			if ($(this).hasClass("sorting_asc")){
+				qs["descending"] = "true";
+			}
+			else {
+				delete qs["descending"];
+			}
+			location.href = setQueryString(qs);
+		});
+
+		$("#pagesize").val("${pagesize}");
+		$("#pagesize").change(function(){
+			qs["pagenum"] = "1";
+			qs["pagesize"] = $("#pagesize").val();
+			location.href = setQueryString(qs);
+		});
 
         //delete handlers
         $(".delete").live("click", function(e){

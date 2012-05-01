@@ -17,21 +17,12 @@
 from django.template.defaultfilters import urlencode
 %>
 
-<%def name="footer()">
-      <div class="fb-uploader jframe-hidden">
-        <a class="fb-cancel-upload">Close</a>
-        <ul class="fb-upload-list"></ul>
-
-        <div class="fb-noflash">If you are experiencing flash errors due to uploading,
-          you can <a target="hue_upload" href="${ url('filebrowser.views.upload') }">upload without flash</a>.
-        </div>
-      </div>
-    </body>
-  </html>
-</%def>
-
 <%def name="breadcrumbs(path, breadcrumbs)">
     <div class="subnav">
+		<p class="pull-right">
+			<a href="#" class="btn upload-link">Upload files</a>
+			<a href="#" class="btn create-directory-link">New directory</a>
+		</p>
         <ul class="nav nav-pills">
           <li><a href="${url('filebrowser.views.view', path=urlencode(path))}?default_to_home"><i class="icon-home"></i>Home</a></li>
           <li>

@@ -469,8 +469,14 @@ from django.utils.encoding import smart_str
         });
 
         // handle search
+        $(".search-query").keydown(function(e){
+            if (e.keyCode == 13){
+                $(".filter").click();
+            }
+        });
         $(".filter").click(function(){
             qs["filter"] = $(".search-query").val();
+            qs["pagenum"] = "1";
             location.href = setQueryString(qs);
         });
 

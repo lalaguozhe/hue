@@ -28,7 +28,7 @@ from django.template.defaultfilters import urlencode
 			<a href="#" class="btn upload-link">Upload files</a>
 			<a href="#" class="btn create-directory-link">New directory</a>
             &nbsp;&nbsp;&nbsp;&nbsp;
-            <input type="text" value="${current_filter}" class="input-medium search-query">
+            <input type="text" value="${current_filter}" class="input-medium search-query" placeholder="Search for file name">
             <a href="#" class="btn filter">Search</a>
 		</p>
         <ul class="nav nav-pills">

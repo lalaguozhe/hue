@@ -412,6 +412,7 @@ def listdir_paged(request, path):
         'files': page.object_list,
         'page': page,
         'pagesize': pagesize,
+        'filter_str': filter_str,
         # The following should probably be deprecated
         'cwd_set': True,
         'file_filter': 'any',

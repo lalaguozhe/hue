@@ -72,7 +72,7 @@ from django.utils.encoding import smart_str
 			cursor: pointer;
 		}
 	</style>
-
+    %if len(files)>0 :
 	<table class="table table-condensed table-striped datatables">
 		<thead>
 			<tr>
@@ -154,6 +154,11 @@ from django.utils.encoding import smart_str
 	</table>
 
 	${pagination(page)}
+    %else:
+        <div class="alert">
+            There are no files matching the search criteria.
+        </div>
+    %endif
 
 <!-- delete modal -->
 <div id="deleteModal" class="modal hide fade">
@@ -461,6 +466,12 @@ from django.utils.encoding import smart_str
                 keyboard: true,
                 show: true
             });
+        });
+
+        // handle search
+        $(".filter").click(function(){
+            qs["filter"] = $(".search-query").val();
+            location.href = setQueryString(qs);
         });
 
         $("#cancelCreateDirectoryBtn").click(function(){

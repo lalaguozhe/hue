@@ -123,7 +123,7 @@ def view(request, path):
     try:
         stats = request.fs.stats(path)
         if stats.isDir:
-            return listdir_paged(request, path, False)
+            return listdir_paged(request, path)
         else:
             return display(request, path)
     except (IOError, WebHdfsException), e:
@@ -346,11 +346,9 @@ def listdir(request, path, chooser):
     else:
         return render('listdir.mako', request, data)
 
-def listdir_paged(request, path, chooser):
+def listdir_paged(request, path):
     """
     A paginated version of listdir.
-    Does not support sorting (yet).
-    Does not support chooser (yet).
 
     Query parameters:
       pagenum           - The page number to show. Defaults to 1.
@@ -419,10 +417,7 @@ def listdir_paged(request, path, chooser):
         'file_filter': 'any',
         'current_dir_path': path,
     }
-    if chooser:
-        raise NotImplementedError       # TODO(bc)
-    else:
-        return render('listdir_paged.mako', request, data)
+    return render('listdir_paged.mako', request, data)
 
 
 def chooser(request, path):

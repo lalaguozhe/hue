@@ -85,7 +85,7 @@ from django.utils.encoding import smart_str
 				<th class="sortable sorting" data-sort="user">User</th>
 				<th class="sortable sorting" data-sort="group">Group</th>
 				<th>Permissions</th>
-				<th class="sortable sorting" data-sort="atime">Date</th>
+				<th class="sortable sorting" data-sort="mtime">Date</th>
 				<th>&nbsp;</th>
 			</tr>
 		</thead>

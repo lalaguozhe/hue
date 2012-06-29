@@ -26,7 +26,7 @@ ${commonheader('File Browser', 'filebrowser')}
 <div class="container-fluid">
     <h1>File Browser</h1>
     % if breadcrumbs:
-        ${fb_components.breadcrumbs(path, breadcrumbs)}
+        ${fb_components.breadcrumbs(path, breadcrumbs, True)}
     %endif
     <div id="dirlist" class="view">
         ${dir.list_table_browser(files, path, current_request_path, cwd_set)}

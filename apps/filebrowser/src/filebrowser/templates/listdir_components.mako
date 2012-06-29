@@ -17,7 +17,7 @@
 import datetime
 import md5
 from django.template.defaultfilters import urlencode, stringformat, filesizeformat, date, time, escape
-from desktop.lib.django_util import reverse_with_get, extract_field_data
+from desktop.lib.django_util import reverse_with_get
 from django.utils.encoding import smart_str
 %>
 
@@ -340,7 +340,7 @@ from django.utils.encoding import smart_str
 
     function getQueryString(){
         var queryString = {};
-        if (window.location.href.indexOf("?")>-1){
+        if (window.location.href.indexOf("?") > -1) {
             window.location.href.split("?").pop().split("&").forEach(function (prop) {
                 var item = prop.split("=");
                 queryString[item.shift()] = item.shift();
@@ -354,7 +354,7 @@ from django.utils.encoding import smart_str
         for (var key in queryString) {
             qs += key + "=" + queryString[key] + "&";
         }
-        return qs.substring(0,qs.length-1);
+        return qs.substring(0, qs.length - 1);
     }
 
     $(document).ready(function(){
@@ -364,9 +364,9 @@ from django.utils.encoding import smart_str
             qs["sortby"] = "name";
         }
 
-        var el = $(".sortable[data-sort="+qs["sortby"]+"]");
+        var el = $(".sortable[data-sort=" + qs["sortby"] + "]");
         el.removeClass("sorting");
-        if (qs["descending"] != null && qs["descending"] == "true"){
+        if (qs["descending"] != null && qs["descending"] == "true") {
             el.addClass("sorting_desc");
         }
         else {
@@ -375,8 +375,8 @@ from django.utils.encoding import smart_str
 
 
         $(".sortable").click(function(){
-            qs["sortby"]=$(this).data("sort");
-            if ($(this).hasClass("sorting_asc")){
+            qs["sortby"] = $(this).data("sort");
+            if ($(this).hasClass("sorting_asc")) {
                 qs["descending"] = "true";
             }
             else {

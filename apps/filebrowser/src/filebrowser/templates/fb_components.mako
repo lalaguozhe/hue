@@ -24,13 +24,13 @@ from django.template.defaultfilters import urlencode
         current_filter = filter_str
     %>
     <div class="subnav">
-		<p class="pull-right">
-			<a href="#" class="btn upload-link">Upload files</a>
-			<a href="#" class="btn create-directory-link">New directory</a>
+        <p class="pull-right">
+            <a href="#" class="btn upload-link">Upload files</a>
+            <a href="#" class="btn create-directory-link">New directory</a>
             &nbsp;&nbsp;&nbsp;&nbsp;
             <input type="text" value="${current_filter}" class="input-medium search-query" placeholder="Search for file name">
             <a href="#" class="btn filter">Search</a>
-		</p>
+        </p>
         <ul class="nav nav-pills">
           <li><a href="${url('filebrowser.views.view', path=urlencode(path))}?default_to_home"><i class="icon-home"></i>Home</a></li>
           <li>

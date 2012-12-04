@@ -181,7 +181,8 @@
       </div>
 
       <div class="modal-footer">
-        <button data-dismiss="modal" class="btn btn-primary">${ _('Done')}</button>
+        <button data-dismiss="modal" class="btn">${ _('Cancel')}</button>
+        <button data-dismiss="modal" class="btn btn-primary doneButton">${ _('Done')}</button>
       </div>
 
     </form>
